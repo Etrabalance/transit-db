@@ -1,0 +1,171 @@
+// Week 02 ER diagram. Relationships are logical; NOT enforced by migration SQL until week 03.
+// M:N routes/stops via route_stop; M:N drivers/categories via driver_license.
+// No literal foreign keys in migration 02_schema.sql.
+
+Project transit_srsp {
+  database_type: "PostgreSQL"
+  Note: "Almaty passenger transport; Week 2 logical schema"
+}
+
+Table transit.depot {
+  Note: 'Автобусное депо'
+  id bigint [pk, increment]
+  name text [not null]
+  address text [not null]
+}
+
+Table transit.route {
+  Note: 'Маршрут пассажирского транспорта'
+  id bigint [pk, increment]
+  number text [not null]
+  length_km numeric(6,2) [not null]
+  start_date date [not null]
+  created_at timestamptz [not null]
+}
+
+Table transit.stop {
+  Note: 'Остановка общественного транспорта'
+  id bigint [pk, increment]
+  name text [not null]
+  latitude numeric(9,6) [not null]
+  longitude numeric(9,6) [not null]
+}
+
+Table transit.bus_model {
+  Note: 'Справочник моделей автобусов'
+  id bigint [pk, increment]
+  manufacturer text [not null]
+  model_name text [not null]
+  capacity integer [not null]
+  fuel_type text [not null]
+}
+
+Table transit.bus {
+  Note: 'Парк автобусов'
+  id bigint [pk, increment]
+  model_id bigint [not null]
+  depot_id bigint [not null]
+  registration_no text [not null, unique]
+  year_manufactured integer [not null]
+  status text [not null]
+}
+
+Table transit.driver {
+  Note: 'Водители транспортного предприятия'
+  id bigint [pk, increment]
+  depot_id bigint [not null]
+  last_name text [not null]
+  first_name text [not null]
+  middle_name text
+  phone text
+  hire_date date [not null]
+}
+
+Table transit.license_category {
+  Note: 'Справочник водительских категорий'
+  id bigint [pk, increment]
+  code text [not null, unique]
+  description text
+}
+
+Table transit.driver_license {
+  Note: 'Связь M:N водителей и водительских категорий'
+  id bigint [pk, increment]
+  driver_id bigint [not null]
+  category_id bigint [not null]
+  document_no text [not null]
+  issued_on date [not null, note: 'Дата выдачи категории']
+  expires_on date [note: 'Дата окончания срока действия, если установлена']
+}
+
+Table transit.route_stop {
+  Note: 'Связь M:N маршрутов и остановок с порядком прохождения'
+  id bigint [pk, increment]
+  route_id bigint [not null]
+  stop_id bigint [not null]
+  stop_order integer [not null, note: 'Порядковый номер остановки внутри маршрута']
+  distance_from_start_km numeric(7,2) [not null, note: 'Расстояние от начала маршрута в километрах']
+  is_terminal boolean [not null]
+}
+
+Table transit.shift {
+  Note: 'Справочник смен'
+  id bigint [pk, increment]
+  name text [not null, unique]
+  starts_at time [not null]
+  ends_at time [not null]
+  crosses_midnight boolean [not null]
+}
+
+Table transit.route_schedule {
+  Note: 'Повторяемое расписание отправлений маршрутов'
+  id bigint [pk, increment]
+  route_id bigint [not null]
+  shift_id bigint [not null]
+  weekday smallint [not null]
+  planned_departure time [not null]
+  valid_from date [not null]
+  valid_to date
+}
+
+Table transit.assignment {
+  Note: 'Наряд: назначение водителя и автобуса на маршрут и смену'
+  id bigint [pk, increment]
+  route_id bigint [not null]
+  bus_id bigint [not null]
+  driver_id bigint [not null]
+  shift_id bigint [not null]
+  service_date date [not null]
+  status text [not null]
+  created_at timestamptz [not null]
+}
+
+Table transit.trip {
+  Note: 'Фактический или запланированный рейс по наряду'
+  id bigint [pk, increment]
+  assignment_id bigint [not null]
+  trip_number integer [not null]
+  planned_start_at timestamptz [not null]
+  planned_end_at timestamptz
+  actual_start_at timestamptz
+  actual_end_at timestamptz
+  status text [not null]
+}
+
+Table transit.vehicle_position {
+  Note: 'Таблица-факт телеметрии движения автобуса; 2+ млн строк на неделе 4'
+  id bigint [pk, increment]
+  trip_id bigint [not null]
+  observed_at timestamptz [not null, note: 'Момент получения геопозиции']
+  latitude numeric(9,6) [not null]
+  longitude numeric(9,6) [not null]
+  speed_kmh numeric(5,2) [not null]
+  source text [not null]
+}
+
+Table transit.bus_maintenance {
+  Note: 'История обслуживания и ремонта автобусов'
+  id bigint [pk, increment]
+  bus_id bigint [not null]
+  service_date date [not null]
+  maintenance_type text [not null]
+  cost numeric(12,2)
+  description text
+}
+
+Ref: transit.bus.model_id > transit.bus_model.id
+Ref: transit.bus.depot_id > transit.depot.id
+Ref: transit.driver.depot_id > transit.depot.id
+Ref: transit.driver_license.driver_id > transit.driver.id
+Ref: transit.driver_license.category_id > transit.license_category.id
+Ref: transit.route_stop.route_id > transit.route.id
+Ref: transit.route_stop.stop_id > transit.stop.id
+Ref: transit.route_schedule.route_id > transit.route.id
+Ref: transit.route_schedule.shift_id > transit.shift.id
+Ref: transit.assignment.route_id > transit.route.id
+Ref: transit.assignment.bus_id > transit.bus.id
+Ref: transit.assignment.driver_id > transit.driver.id
+Ref: transit.assignment.shift_id > transit.shift.id
+Ref: transit.trip.assignment_id > transit.assignment.id
+Ref: transit.vehicle_position.trip_id > transit.trip.id
+Ref: transit.bus_maintenance.bus_id > transit.bus.id

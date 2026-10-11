@@ -1,0 +1,42 @@
+digraph transit {
+  graph [rankdir=LR, bgcolor="white", dpi=140, nodesep=0.38, ranksep=0.9, splines=polyline, pad=0.25];
+  node [shape=record, fontname="DejaVu Sans", fontsize=10, color="#64748b", penwidth=1.2, style="rounded,filled", fillcolor="#f8fafc", fontcolor="#0f172a"];
+  edge [color="#64748b", arrowsize=0.65, penwidth=1.0, fontname="DejaVu Sans", fontsize=8, fontcolor="#475569"];
+  subgraph cluster_0 { label="Справочники"; fontsize=15; fontname="DejaVu Sans"; color="#e2e8f0"; style="rounded"; margin=15;
+    depot [label="{depot|id\l}", fillcolor="#f8fafc"];
+    route [label="{route|id\l}", fillcolor="#f8fafc"];
+    stop [label="{stop|id\llatitude\llongitude\l}", fillcolor="#f8fafc"];
+    bus_model [label="{bus_model|id\l}", fillcolor="#f8fafc"];
+    license_category [label="{license_category|id\l}", fillcolor="#f8fafc"];
+    shift [label="{shift|id\l}", fillcolor="#f8fafc"];
+  }
+  subgraph cluster_1 { label="Ресурсы и связи M:N"; fontsize=15; fontname="DejaVu Sans"; color="#e2e8f0"; style="rounded"; margin=15;
+    bus [label="{bus|id\lmodel_id\ldepot_id\lstatus\l}", fillcolor="#f8fafc"];
+    driver [label="{driver|id\ldepot_id\l}", fillcolor="#f8fafc"];
+    route_stop [label="{route_stop|id\lroute_id\lstop_id\lstop_order\l}", fillcolor="#fef3c7"];
+    driver_license [label="{driver_license|id\ldriver_id\lcategory_id\l}", fillcolor="#fef3c7"];
+    route_schedule [label="{route_schedule|id\lroute_id\l}", fillcolor="#f8fafc"];
+  }
+  subgraph cluster_2 { label="Операции и факты"; fontsize=15; fontname="DejaVu Sans"; color="#e2e8f0"; style="rounded"; margin=15;
+    assignment [label="{assignment|id\lroute_id\lbus_id\ldriver_id\lservice_date\lstatus\l}", fillcolor="#f8fafc"];
+    trip [label="{trip|id\lassignment_id\lplanned_start_at\lstatus\l}", fillcolor="#f8fafc"];
+    vehicle_position [label="{vehicle_position|id\ltrip_id\lobserved_at\llatitude\llongitude\l}", fillcolor="#dcfce7"];
+    bus_maintenance [label="{bus_maintenance|id\lbus_id\lservice_date\l}", fillcolor="#f8fafc"];
+  }
+  bus_model -> bus [xlabel="1:N", labeldistance=1.3];
+  depot -> bus [xlabel="1:N", labeldistance=1.3];
+  depot -> driver [xlabel="1:N", labeldistance=1.3];
+  driver -> driver_license [xlabel="1:N", labeldistance=1.3];
+  license_category -> driver_license [xlabel="1:N", labeldistance=1.3];
+  route -> route_stop [xlabel="1:N", labeldistance=1.3];
+  stop -> route_stop [xlabel="1:N", labeldistance=1.3];
+  route -> route_schedule [xlabel="1:N", labeldistance=1.3];
+  shift -> route_schedule [xlabel="1:N", labeldistance=1.3];
+  route -> assignment [xlabel="1:N", labeldistance=1.3];
+  bus -> assignment [xlabel="1:N", labeldistance=1.3];
+  driver -> assignment [xlabel="1:N", labeldistance=1.3];
+  shift -> assignment [xlabel="1:N", labeldistance=1.3];
+  assignment -> trip [xlabel="1:N", labeldistance=1.3];
+  trip -> vehicle_position [xlabel="1:N", labeldistance=1.3];
+  bus -> bus_maintenance [xlabel="1:N", labeldistance=1.3];
+}
